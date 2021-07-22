@@ -4,7 +4,6 @@ use serde_json::{Result, Value};
 use std::error::Error;
 use std::path::Path;
 
-
 fn main() {
     println!("Hello, world!");
     let s1 = "test.rego";
