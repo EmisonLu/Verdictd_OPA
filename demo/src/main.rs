@@ -11,7 +11,7 @@ extern crate libc;
 // use std::ffi::CStr;
 use std::str;
 
-pub type GoUint8 = ::std::os::raw::c_uchar;
+// pub type GoUint8 = ::std::os::raw::c_uchar;
 
 #[derive(Debug)]
 pub struct GoString {
@@ -24,7 +24,7 @@ extern {
     // fn DoubleInput(input: libc::c_int) -> libc::c_int;
     // fn Hello();
     // pub fn handleReference(mr_ref: GoString);
-    pub fn handleInput(policy: GoString, message: GoString) -> GoString;
+    pub fn makeDecisionGo(policy: GoString, message: GoString) -> GoString;
 }
 
 fn main() {
@@ -82,8 +82,7 @@ allow = true {
     mrEnclave == input.mrEnclave
     mrSigner == input.mrSigner
     productId == input.productId
-}
-    ";
+}";
 
     let path = String::from("src/policy/") + policy_name;
     let path = Path::new(&path);
@@ -110,7 +109,7 @@ allow = true {
     true
 }
 
-fn set_raw_policy(policy_name: &str, policy: &str)-> bool {
+pub fn set_raw_policy(policy_name: &str, policy: &str)-> bool {
 
     let path = String::from("src/policy/") + policy_name;
     let path = Path::new(&path);
@@ -150,7 +149,7 @@ fn set_raw_policy(policy_name: &str, policy: &str)-> bool {
     true
 }
 
-fn export_policy(policy_name: &str)-> String {
+pub fn export_policy(policy_name: &str)-> String {
     let path = String::from("src/policy/") + policy_name;
 
     let mut contents = String::new();
@@ -175,7 +174,7 @@ fn export_policy(policy_name: &str)-> String {
     contents
 }
 
-fn make_decision(policy_name : &str, message : &str) -> String {
+pub fn make_decision(policy_name : &str, message : &str) -> String {
 
     let h1 = message.as_ptr() as *const i8;
     let input1 = GoString {
@@ -190,7 +189,7 @@ fn make_decision(policy_name : &str, message : &str) -> String {
         n: result.len() as isize,
     };
     let res: GoString;
-    unsafe {res = handleInput(input2, input1);};
+    unsafe {res = makeDecisionGo(input2, input1);};
 
     let v: &[u8] = unsafe { std::slice::from_raw_parts(res.p as *const u8, res.n as usize) };
     let line = String::from_utf8(v.to_vec()).unwrap();

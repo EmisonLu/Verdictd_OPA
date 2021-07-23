@@ -3,7 +3,7 @@ package main
 import "C"
 
 import (
-	"bytes"
+	// "bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,8 +13,8 @@ import (
 	"github.com/open-policy-agent/opa/rego"
 )
 
-//export handleInput
-func handleInput(policy string, message string) string {
+//export makeDecisionGo
+func makeDecisionGo(policy string, message string) string {
 
 	message_map := make(map[string]string)
 
@@ -55,13 +55,6 @@ func handleInput(policy string, message string) string {
 		return "true"
 	}
 	return "false"
-}
-
-func byteDelZero(data_str string) []byte {
-	data_byte := []byte(data_str)
-	index := bytes.IndexByte(data_byte, 0)
-	data_byte = data_byte[:index]
-	return data_byte
 }
 
 func main() {}

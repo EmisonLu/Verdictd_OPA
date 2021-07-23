@@ -11,4 +11,3 @@ allow = true {
     mrSigner == input.mrSigner
     productId == input.productId
 }
-    
