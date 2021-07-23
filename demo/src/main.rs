@@ -3,6 +3,7 @@ use std::io::prelude::*;
 use serde_json::{Result, Value};
 use std::error::Error;
 use std::path::Path;
+use std::process::Command;
 
 pub type GoUint8 = ::std::os::raw::c_uchar;
 pub struct GoString {
@@ -10,7 +11,7 @@ pub struct GoString {
     pub n: isize,
 }
 
-#[link(name = "double_input")]
+#[link(name = "opa")]
 extern {
     // fn DoubleInput(input: libc::c_int) -> libc::c_int;
     fn Hello();
@@ -44,7 +45,7 @@ fn main() {
 
 
 
-    println!("Hello, world!");
+    // println!("Hello, world!");
     let s1 = "test.rego";
     let s2 = r#"
             {
@@ -54,6 +55,16 @@ fn main() {
             }
             "#;
     let result = set_reference(s1, s2);
+
+
+    let policy = "package demo\n\n".to_owned() + "\n
+    default allow = false
+    
+    allow = true {
+
+    }
+        ";
+    let result = set_raw_policy("test1.rego", &policy);
 }
 
 pub fn set_reference(policy_name : &str, references : &str) -> bool {
@@ -100,6 +111,49 @@ allow = true {
             return false;
         },
         Ok(_) => (),
+    }
+
+    true
+}
+
+fn set_raw_policy(policy_name: &str, policy: &str)-> bool {
+
+    let path = String::from("src/policy/") + policy_name;
+    let path = Path::new(&path);
+    let display = path.display();
+
+    // Open the file in write-only mode, return `io::Result<File>`
+    let mut file = match File::create(&path) {
+        Err(why) => {
+            panic!("couldn't create {}: {}", display, why.description());
+            return false;
+        },
+        Ok(file) => file,
+    };
+
+    // Write the string `policy` into `file`, return `io::Result<()>`
+    match file.write_all(policy.as_bytes()) {
+        Err(why) => {
+            panic!("couldn't write to {}: {}", display, why.description());
+            return false;
+        },
+        Ok(_) => (),
+    }
+
+    let output = match Command::new("opa")
+                     .arg("check")
+                     .arg(&path)
+                     .status(){
+                         Err(why) => {
+                             println!("failed to check");
+                             return false
+                         }
+                         Ok(res) => res,
+                     };
+
+    if !output.success(){
+        println!("hhh");
+        return false;
     }
 
     true

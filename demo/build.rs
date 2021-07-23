@@ -8,6 +8,6 @@ fn main() {
         "Darwin" => "dylib",
         _ => "so"
     };
-    Command::new("go").args(&["build", "-o", &format!("target/debug/libdouble_input.{}", ext), "-buildmode=c-shared", "src/opa.go"])
+    Command::new("go").args(&["build", "-o", &format!("target/debug/libopa.{}", ext), "-buildmode=c-shared", "src/opa.go"])
         .status().unwrap();
 }
