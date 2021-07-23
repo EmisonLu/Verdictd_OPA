@@ -61,10 +61,13 @@ fn main() {
     default allow = false
     
     allow = true {
-
+        1==1
     }
         ";
     let result = set_raw_policy("test1.rego", &policy);
+
+    let result = export_policy("test1.rego");
+    println!("{}", result);
 }
 
 pub fn set_reference(policy_name : &str, references : &str) -> bool {
@@ -98,7 +101,7 @@ allow = true {
     // Open the file in write-only mode, return `io::Result<File>`
     let mut file = match File::create(&path) {
         Err(why) => {
-            panic!("couldn't create {}: {}", display, why.description());
+            println!("couldn't create {}: {}", display, why.description());
             return false;
         },
         Ok(file) => file,
@@ -107,7 +110,7 @@ allow = true {
     // Write the string `policy` into `file`, return `io::Result<()>`
     match file.write_all(policy.as_bytes()) {
         Err(why) => {
-            panic!("couldn't write to {}: {}", display, why.description());
+            println!("couldn't write to {}: {}", display, why.description());
             return false;
         },
         Ok(_) => (),
@@ -125,7 +128,7 @@ fn set_raw_policy(policy_name: &str, policy: &str)-> bool {
     // Open the file in write-only mode, return `io::Result<File>`
     let mut file = match File::create(&path) {
         Err(why) => {
-            panic!("couldn't create {}: {}", display, why.description());
+            println!("couldn't create {}: {}", display, why.description());
             return false;
         },
         Ok(file) => file,
@@ -134,27 +137,50 @@ fn set_raw_policy(policy_name: &str, policy: &str)-> bool {
     // Write the string `policy` into `file`, return `io::Result<()>`
     match file.write_all(policy.as_bytes()) {
         Err(why) => {
-            panic!("couldn't write to {}: {}", display, why.description());
+            println!("couldn't write to {}: {}", display, why.description());
             return false;
         },
         Ok(_) => (),
     }
 
-    let output = match Command::new("opa")
-                     .arg("check")
-                     .arg(&path)
-                     .status(){
-                         Err(why) => {
-                             println!("failed to check");
-                             return false
-                         }
-                         Ok(res) => res,
-                     };
+    let status = match Command::new("opa").arg("check").arg(&path).status(){
+        Err(why) => {
+            println!("failed to check");
+            return false
+        }
+        Ok(res) => res,
+    };
 
-    if !output.success(){
+    if !status.success(){
         println!("hhh");
         return false;
     }
 
     true
 }
+
+fn export_policy(policy_name: &str)-> String {
+    let path = String::from("src/policy/") + policy_name;
+
+    let mut contents = String::new();
+
+    let mut file = match File::open(path) {
+        Err(why) => {
+            println!("failed to open");
+            return contents;
+        }
+        Ok(res) => res,
+    };
+
+    match file.read_to_string(&mut contents) {
+        Err(why) => {
+            println!("failed to read");
+            return contents;
+        }
+        Ok(res) => res,
+    };
+
+    println!("{}", contents);
+    contents
+}
+
