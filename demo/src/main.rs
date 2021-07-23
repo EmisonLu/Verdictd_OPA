@@ -5,17 +5,10 @@ use std::error::Error;
 use std::path::Path;
 use std::process::Command;
 
-extern crate libc;
-
-// use libc::c_char;
-// use std::ffi::CStr;
-use std::str;
-
-// pub type GoUint8 = ::std::os::raw::c_uchar;
-
 #[derive(Debug)]
+#[repr(C)]
 pub struct GoString {
-    pub p: *const ::std::os::raw::c_char,
+    pub p: *const std::os::raw::c_char,
     pub n: isize,
 }
 
