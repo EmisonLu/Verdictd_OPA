@@ -1,11 +1,19 @@
 use std::fs::File;
 use std::io::prelude::*;
-use serde_json::{Result, Value};
+use serde_json::Value;
 use std::error::Error;
 use std::path::Path;
 use std::process::Command;
 
+extern crate libc;
+
+// use libc::c_char;
+// use std::ffi::CStr;
+use std::str;
+
 pub type GoUint8 = ::std::os::raw::c_uchar;
+
+#[derive(Debug)]
 pub struct GoString {
     pub p: *const ::std::os::raw::c_char,
     pub n: isize,
@@ -14,36 +22,12 @@ pub struct GoString {
 #[link(name = "opa")]
 extern {
     // fn DoubleInput(input: libc::c_int) -> libc::c_int;
-    fn Hello();
-    pub fn handleReference(mr_ref: GoString);
-    pub fn handleInput(mr_usr: GoString) -> GoUint8;
+    // fn Hello();
+    // pub fn handleReference(mr_ref: GoString);
+    pub fn handleInput(policy: GoString, message: GoString) -> GoString;
 }
 
 fn main() {
-    // let c_str = CString::new("{\"MRENCLAVE\":\"73284f63a6d8796f\",\"MRSIGNER\":\"c4219b312ce36827\"}").unwrap();
-    let c_str = "{\"MRENCLAVE\":\"73284f63a6d8796f\",\"MRSIGNER\":\"c4219b312ce36827\"}".to_string();
-    let h = c_str.as_ptr() as *const i8;
-    let input = GoString {
-        p: h,
-        n: c_str.len() as isize,
-    };
-    unsafe {handleReference(input);}
-    // let input = 2;
-    // let output = unsafe { DoubleInput(input) };
-    // println!("{} * 2 = {}", input, output);
-    unsafe {Hello()};
-    // unsafe{World()};
-    let c_str1 = "{\"MRENCLAVE\":\"73284f63a6d8796f\",\"MRSIGNER\":\"c4219b312ce36827\"}".to_string();
-    let h1 = c_str1.as_ptr() as *const i8;
-    let input1 = GoString {
-        p: h1,
-        n: c_str1.len() as isize,
-    };
-    let res;
-    unsafe {res = handleInput(input1);};
-    println!("{}", res);
-
-
 
     // println!("Hello, world!");
     let s1 = "test.rego";
@@ -68,6 +52,13 @@ fn main() {
 
     let result = export_policy("test1.rego");
     println!("{}", result);
+
+    println!("================================================");
+
+    let input = "{\"mrEnclave\":\"123\",\"mrSigner\":\"456\",\"productId\":\"789\"}";
+    let result = make_decision("test.rego", input);
+    println!("{}", result);
+
 }
 
 pub fn set_reference(policy_name : &str, references : &str) -> bool {
@@ -184,3 +175,25 @@ fn export_policy(policy_name: &str)-> String {
     contents
 }
 
+fn make_decision(policy_name : &str, message : &str) -> String {
+
+    let h1 = message.as_ptr() as *const i8;
+    let input1 = GoString {
+        p: h1,
+        n: message.len() as isize,
+    };
+    let result = export_policy(policy_name);
+
+    let h2 = result.as_ptr() as *const i8;
+    let input2 = GoString {
+        p: h2,
+        n: result.len() as isize,
+    };
+    let res: GoString;
+    unsafe {res = handleInput(input2, input1);};
+
+    let v: &[u8] = unsafe { std::slice::from_raw_parts(res.p as *const u8, res.n as usize) };
+    let line = String::from_utf8(v.to_vec()).unwrap();
+    
+    line
+}
