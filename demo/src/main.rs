@@ -4,11 +4,13 @@ use serde_json::Value;
 use std::error::Error;
 use std::path::Path;
 use std::process::Command;
+use std::os::raw::c_char;
+use std::ffi::CStr;
 
 #[derive(Debug)]
 #[repr(C)]
 pub struct GoString {
-    pub p: *const std::os::raw::c_char,
+    pub p: *const c_char,
     pub n: isize,
 }
 
@@ -17,7 +19,9 @@ extern {
     // fn DoubleInput(input: libc::c_int) -> libc::c_int;
     // fn Hello();
     // pub fn handleReference(mr_ref: GoString);
-    pub fn makeDecisionGo(policy: GoString, message: GoString) -> GoString;
+    // pub fn makeDecisionGo(policy: GoString, message: GoString) -> GoString;
+    pub fn makeDecisionGo(policy: GoString, message: GoString) -> *mut c_char;
+
 }
 
 fn main() {
@@ -50,7 +54,7 @@ fn main() {
 
     let input = "{\"mrEnclave\":\"123\",\"mrSigner\":\"456\",\"productId\":\"789\"}";
     let result = make_decision("test.rego", input);
-    println!("{}", result);
+    println!("======{}", result);
 
 }
 
@@ -182,10 +186,17 @@ pub fn make_decision(policy_name : &str, message : &str) -> String {
         n: result.len() as isize,
     };
     let res: GoString;
-    unsafe {res = makeDecisionGo(input2, input1);};
+    // unsafe {res = makeDecisionGo(input2, input1);};
 
-    let v: &[u8] = unsafe { std::slice::from_raw_parts(res.p as *const u8, res.n as usize) };
-    let line = String::from_utf8(v.to_vec()).unwrap();
-    
-    line
+    // let v: &[u8] = unsafe { std::slice::from_raw_parts(res.p as *const u8, res.n as usize) };
+    // let line = String::from_utf8(v.to_vec()).unwrap();
+
+
+    let c_buf: *mut c_char = unsafe { makeDecisionGo(input2, input1) };
+    let c_str: &CStr = unsafe { CStr::from_ptr(c_buf) };
+    let str_slice: &str = c_str.to_str().unwrap();
+    let str_buf: String = str_slice.to_owned();  // if necessary
+    println!("==={}", &str_buf);
+
+    str_buf
 }
